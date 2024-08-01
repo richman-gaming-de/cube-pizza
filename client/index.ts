@@ -1,5 +1,5 @@
-import * as alt from 'alt-client';
-import { useNativeMenu } from '@Client/menus/native/index.js';
+import * as alt from 'alt-client'
+import { useNativeMenu } from '@Client/menus/native/index.js'
 
 const menu = useNativeMenu({
     header: 'Admin Menu',
@@ -33,11 +33,11 @@ const menu = useNativeMenu({
             }
         }
     ]
-});
+})
 
 alt.on('keyup', (key) => {
     // F11
     if (key === 122) {
-        menu.open();
+        menu.open()
     }
-});
+})
