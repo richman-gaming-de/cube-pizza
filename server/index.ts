@@ -1,41 +1,64 @@
 import * as alt from 'alt-server'
 import { useRebar } from '@Server/index.js'
+import * as Utility from '@Shared/utility/index.js'
+import { BlipColor } from '@Shared/types/blip.js'
+import { deliveryPoints } from '../shared/deliverypoints.js'
 
 const Rebar = useRebar()
 
+let jobBlip = null
+let jobInteraction = null
+
 // Create an interaction
-const interaction = Rebar.controllers.useInteraction(new alt.ColshapeCylinder(-1529.1893310546875, -908.73291015625, 9.16956901550293, 5, 2), 'player')
+const interaction = Rebar.controllers.useInteraction(new alt.ColshapeCylinder(-1529.1893310546875, -908.73291015625, 9.16956901550293, 2, 2), 'player')
 
-// Listen for the player to hit 'E' to interact
-interaction.on(handleInteraction)
+interaction.on((player) => {
+    const rPlayer = Rebar.usePlayer(player)
+    if (!rPlayer.isValid()) return
 
-function handleInteraction(player: alt.Player, colshape: alt.Colshape, uid: string) {
-    alt.log(`${player.name} has interacted with ${uid}`)
-}
+    if (player.hasStreamSyncedMeta('job')) return rPlayer.notify.showNotification('Du hast bereits einen Job laufen');
 
-// Message to show the player when they interact
-// Use `undefined` or `null` to hide default messages
-interaction.setMessage('enter', 'Press \'E\' to Interact')
-interaction.setMessage('leave', 'You left the interaction...')
 
-// Removing the interaction also destroys the colshape
-interaction.destroy()
+    const jobVehicle = new alt.Vehicle('pizzaboy', -1525.0675048828125, -914.4347534179688, 9.643064498901367, 0.01141282357275486, -0.13758710026741028, 2.4666574001312256)
 
-// Do something when the player enters the interaction
-interaction.onEnter((player: alt.Player, colshape: alt.Colshape, uid: string) => {
-    alt.log(`${player.name} has entered the interaction`)
-    // someone entered
-})
+    // @ToDo: add plate to vehicle
 
-// Do something when the player leaves the interaction
-interaction.onLeave((player: alt.Player, colshape: alt.Colshape, uid: string) => {
-    alt.log(`${player.name} has left the interaction`)
-    // someone left
+    const jobPosition = deliveryPoints[Math.floor(Math.random() * deliveryPoints.length)]
+
+    jobBlip = Rebar.controllers.useBlipLocal(player, {
+        pos: jobPosition,
+        color: BlipColor.YELLOW,
+        sprite: 280,
+        shortRange: false,
+        text: 'Kunde'
+    })
+
+    jobInteraction = Rebar.controllers.useInteractionLocal(player, 'deliverPizzaShape', 'Cylinder', [jobPosition.x, jobPosition.y, jobPosition.z, 2, 2])
+
+    jobInteraction.on(async (player: alt.Player) => {
+        if(Utility.vector.distance(player.pos, jobVehicle.pos) > 5) return rPlayer.notify.showNotification('Du bist zu weit weg vom Fahrzeug')
+
+        jobBlip.destroy()
+        jobInteraction.destroy()
+
+        const object = Rebar.controllers.useObjectLocal(player, {
+            model: alt.hash('prop_pizza_box_01'),
+            pos: player.pos
+        });
+
+        const result = await player.emitRpc('cube:pizza:startAnimation')
+
+        if (!result) {
+            object.destroy()
+            return
+        }
+
+        object.destroy()
+    })
 })
 
 
 // Debug Menu
-
 alt.on('playerConnect', (player: alt.Player) => {
     player.spawn(0, 0, 72)
     player.model = 'mp_m_freemode_01'
@@ -54,4 +77,9 @@ alt.onClient('spawnVehicle', (player: alt.Player, model: string) => {
 
 alt.onClient('teleportToPizzaPlace', (player: alt.Player) => {
     player.pos = new alt.Vector3(-1536.984375, -916.3381958007812, 10.12192440032959)
+})
+
+alt.onClient('tryCoolStuff', (player: alt.Player) => {
+    if(!player.vehicle) return
+    player.pos = Utility.vector.getVectorInFrontOfPlayer(player.vehicle, -1)
 })

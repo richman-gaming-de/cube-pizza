@@ -1,4 +1,5 @@
 import * as alt from 'alt-client'
+import * as native from 'natives'
 import { useNativeMenu } from '@Client/menus/native/index.js'
 
 const menu = useNativeMenu({
@@ -25,6 +26,14 @@ const menu = useNativeMenu({
             }
         },
         {
+            text: 'Try Cool Stuff',
+            type: 'invoke',
+            value: '',
+            callback: () => {
+                alt.emitServerRaw('tryCoolStuff')
+            }
+        },
+        {
             text: 'Spawn Vehicle',
             type: 'input',
             value: '',
@@ -35,6 +44,91 @@ const menu = useNativeMenu({
     ]
 })
 
+const dict = 'anim@scripted@freemode@ig9_pizza@male@'
+alt.onRpc('cube:pizza:startAnimation', async () => {
+    const prop = new alt.LocalObject(
+        'prop_pizza_box_01',
+        new alt.Vector3(alt.Player.local.pos),
+        new alt.Vector3(0, 0, 0),
+        true,
+        false,
+        false,
+        50,
+    )
+    await alt.Utils.requestAnimDict(dict)
+    await alt.Utils.waitFor(() => prop.isSpawned)
+    await alt.Utils.waitFor(() => prop.valid)
+
+    if (!prop.valid) {
+        return false
+    }
+
+    const playerPed = alt.Player.local.scriptID
+    const playerPos = alt.Player.local.pos
+    let playerHead = native.getEntityHeading(playerPed)
+    playerHead += 180.0
+    if(playerHead > 360.0) playerHead -= 360.0
+    const scene = native.networkCreateSynchronisedScene(
+        playerPos.x,
+        playerPos.y,
+        playerPos.z,
+        0.0,
+        0.0,
+        playerHead,
+        2,
+        false,
+        false,
+        -1,
+        0,
+        1.0
+    )
+
+    native.networkAddPedToSynchronisedScene(
+        playerPed,
+        scene,
+        dict,
+        'action_03_player',
+        1.5,
+        -4.0,
+        1,
+        16,
+        1148846080,
+        0
+    )
+
+    native.networkAddEntityToSynchronisedScene(prop.scriptID, scene, dict, 'action_03_pizza', 1.0, 1.0, 1)
+
+    const cam = native.createCam('DEFAULT_ANIMATED_CAMERA', true)
+    native.playCamAnim(
+        cam,
+        'action_03_cam',
+        dict,
+        playerPos.x,
+        playerPos.y,
+        playerPos.z,
+        0.0,
+        0.0,
+        playerHead,
+        false,
+        2
+    )
+
+    native.renderScriptCams(true, false, 0, true, false, 0)
+    native.networkStartSynchronisedScene(scene)
+    native.takeOwnershipOfSynchronizedScene(scene)
+
+    await alt.Utils.wait(native.getAnimDuration(dict, 'action_03_player') * 1000)
+
+    native.setCamActive(cam, false)
+    native.renderScriptCams(false, true, 1000, true, false, 0)
+    native.networkStopSynchronisedScene(scene)
+    native.clearPedTasksImmediately(playerPed)
+    native.destroyCam(cam, false)
+
+    return true
+})
+
+//Debug
 alt.on('keyup', (key) => {
     // F11
     if (key === 122) {
