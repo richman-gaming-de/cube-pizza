@@ -28,7 +28,7 @@ jobs:
 
       - name: Update Rebar PoC Server
         run: |
-          cp -r /home/github-runner/_work/cube-pizza/cube-pizza/production/ /home/ironv-rebar/src/plugins/
+          cp -r /home/github-runner/_work/cube-pizza/cube-pizza/production/* /home/ironv-rebar/src/plugins/
 
       - name: Upgrade Rebar
         run: |
