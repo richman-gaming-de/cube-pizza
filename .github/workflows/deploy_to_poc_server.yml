@@ -1,0 +1,40 @@
+name: Update PoC Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Update
+    runs-on: [ self-hosted, netCup ]
+    steps:
+      - name: Checkout IronV-Rebar Repo
+        uses: actions/checkout@v4
+        with:
+          repository: Iron-V/cube-pizza
+          path: production
+          ref: main
+
+      - name: Remove Resources on PoC Server
+        run: |
+          rm -rf /home/ironv-rebar/src/plugins/cube-pizza/
+
+      - name: Remove unused files
+        run: |
+          rm -rf /home/github-runner/_work/cube-pizza/cube-pizza/production/.github
+          rm -rf /home/github-runner/_work/cube-pizza/cube-pizza/production/.git
+
+      - name: Update Rebar PoC Server
+        run: |
+          cp -r /home/github-runner/_work/cube-pizza/cube-pizza/production/ /home/ironv-rebar/src/plugins/
+
+      - name: Upgrade Rebar
+        run: |
+          cd /home/ironv-rebar/
+          pnpm rebar:upgrade
+
+      - name: Restart Rebar PoC Server
+        run: |
+          sudo systemctl restart rebar-poc.service
