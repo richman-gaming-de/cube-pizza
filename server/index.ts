@@ -16,12 +16,15 @@ interaction.on((player) => {
     const rPlayer = Rebar.usePlayer(player)
     if (!rPlayer.isValid()) return
 
-    if (player.hasStreamSyncedMeta('job')) return rPlayer.notify.showNotification('Du hast bereits einen Job laufen');
-
+    if (player.hasStreamSyncedMeta('activeJob')) return rPlayer.notify.showNotification('Du hast bereits einen Job laufen')
 
     const jobVehicle = new alt.Vehicle('pizzaboy', -1525.0675048828125, -914.4347534179688, 9.643064498901367, 0.01141282357275486, -0.13758710026741028, 2.4666574001312256)
+    jobVehicle.numberPlateText = 'PIZZA'
 
-    // @ToDo: add plate to vehicle
+    player.setStreamSyncedMeta('activeJob', {
+        jobType: 'pizza',
+        vehicle: jobVehicle
+    })
 
     const jobPosition = deliveryPoints[Math.floor(Math.random() * deliveryPoints.length)]
 
@@ -36,17 +39,18 @@ interaction.on((player) => {
     jobInteraction = Rebar.controllers.useInteractionLocal(player, 'deliverPizzaShape', 'Cylinder', [jobPosition.x, jobPosition.y, jobPosition.z, 2, 2])
 
     jobInteraction.on(async (player: alt.Player) => {
-        if(Utility.vector.distance(player.pos, jobVehicle.pos) > 5) return rPlayer.notify.showNotification('Du bist zu weit weg vom Fahrzeug')
+        if (Utility.vector.distance(player.pos, jobVehicle.pos) > 5) return rPlayer.notify.showNotification('Du bist zu weit weg vom Fahrzeug')
 
         jobBlip.destroy()
         jobInteraction.destroy()
 
-        const object = Rebar.controllers.useObjectLocal(player, {
+        const object = Rebar.controllers.useObjectGlobal({
             model: alt.hash('prop_pizza_box_01'),
             pos: player.pos
-        });
+        })
 
-        const result = await player.emitRpc('cube:pizza:startAnimation')
+        const prop = object.getObject()
+        const result = await player.emitRpc('cube:pizza:startAnimation', prop)
 
         if (!result) {
             object.destroy()
@@ -80,6 +84,6 @@ alt.onClient('teleportToPizzaPlace', (player: alt.Player) => {
 })
 
 alt.onClient('tryCoolStuff', (player: alt.Player) => {
-    if(!player.vehicle) return
+    if (!player.vehicle) return
     player.pos = Utility.vector.getVectorInFrontOfPlayer(player.vehicle, -1)
 })

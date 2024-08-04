@@ -45,17 +45,9 @@ const menu = useNativeMenu({
 })
 
 const dict = 'anim@scripted@freemode@ig9_pizza@male@'
-alt.onRpc('cube:pizza:startAnimation', async () => {
-    const prop = new alt.LocalObject(
-        'prop_pizza_box_01',
-        new alt.Vector3(alt.Player.local.pos),
-        new alt.Vector3(0, 0, 0),
-        true,
-        false,
-        false,
-        50,
-    )
+alt.onRpc('startAnimation', async (prop: alt.Object) => {
     await alt.Utils.requestAnimDict(dict)
+    await alt.Utils.requestModel('prop_pizza_box_01')
     await alt.Utils.waitFor(() => prop.isSpawned)
     await alt.Utils.waitFor(() => prop.valid)
 
@@ -67,7 +59,7 @@ alt.onRpc('cube:pizza:startAnimation', async () => {
     const playerPos = alt.Player.local.pos
     let playerHead = native.getEntityHeading(playerPed)
     playerHead += 180.0
-    if(playerHead > 360.0) playerHead -= 360.0
+    if (playerHead > 360.0) playerHead -= 360.0
     const scene = native.networkCreateSynchronisedScene(
         playerPos.x,
         playerPos.y,
@@ -96,7 +88,7 @@ alt.onRpc('cube:pizza:startAnimation', async () => {
         0
     )
 
-    native.networkAddEntityToSynchronisedScene(prop.scriptID, scene, dict, 'action_03_pizza', 1.0, 1.0, 1)
+    native.networkAddEntityToSynchronisedScene(prop, scene, dict, 'action_03_pizza', 1.0, 1.0, 1)
 
     const cam = native.createCam('DEFAULT_ANIMATED_CAMERA', true)
     native.playCamAnim(

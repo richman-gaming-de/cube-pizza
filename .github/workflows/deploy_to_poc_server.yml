@@ -19,7 +19,7 @@ jobs:
 
       - name: Remove Resources on PoC Server
         run: |
-          rm -rf /home/ironv-rebar/src/plugins/cube-pizza/*
+          rm -rf /home/ironv-rebar/src/plugins/cube-pizza/
 
       - name: Remove unused files
         run: |
@@ -28,6 +28,7 @@ jobs:
 
       - name: Update Rebar PoC Server
         run: |
+          mkdir -p /home/ironv-rebar/src/plugins/cube-pizza/
           cp -r /home/github-runner/_work/cube-pizza/cube-pizza/production/* /home/ironv-rebar/src/plugins/cube-pizza/
 
       - name: Upgrade Rebar
