@@ -45,7 +45,7 @@ const menu = useNativeMenu({
 })
 
 const dict = 'anim@scripted@freemode@ig9_pizza@male@'
-alt.onRpc('teleportToPizzaPlace', async (prop: alt.Object) => {
+alt.onRpc('cube:pizza:startAnimation', async (prop: alt.Object) => {
     await alt.Utils.requestAnimDict(dict)
     await alt.Utils.requestModel('prop_pizza_box_01')
     await alt.Utils.waitFor(() => prop.isSpawned)
