@@ -8,22 +8,37 @@ const Rebar = useRebar()
 
 let jobBlip = null
 let jobInteraction = null
+let jobVehicle: alt.Vehicle = null
+
+const pizzaGuyPos = new alt.Vector3(-1529.1893310546875, -908.73291015625, 9.16956901550293)
 
 // Create an interaction
-const interaction = Rebar.controllers.useInteraction(new alt.ColshapeCylinder(-1529.1893310546875, -908.73291015625, 9.16956901550293, 2, 2), 'player')
+const interaction = Rebar.controllers.useInteraction(new alt.ColshapeCylinder(pizzaGuyPos.x, pizzaGuyPos.y, pizzaGuyPos.z, 2, 2), 'player')
 
 interaction.on((player) => {
     const rPlayer = Rebar.usePlayer(player)
     if (!rPlayer.isValid()) return
 
-    if (player.hasStreamSyncedMeta('activeJob')) return rPlayer.notify.showNotification('Du hast bereits einen Job laufen')
+    if (player.hasStreamSyncedMeta('activeJob')) {
+        let jobData = player.getStreamSyncedMeta('activeJob') as { jobType: string, vehicle: alt.Vehicle, payOut: null | number }
+        if(jobData.jobType !== 'pizza') return rPlayer.notify.showNotification('Du hast bereits einen anderen Job laufen')
+        if(jobData.payOut) {
+            alt.emit('someGiveMoneyEvent', jobData.payOut)
+        }
+        player.deleteStreamSyncedMeta('activeJob')
+        if(jobVehicle) jobVehicle.destroy()
+        if(jobBlip) jobBlip.destroy()
+        if(jobInteraction) jobInteraction.destroy()
+        return rPlayer.notify.showNotification('Job beendet')
+    }
 
-    const jobVehicle = new alt.Vehicle('pizzaboy', -1525.0675048828125, -914.4347534179688, 9.643064498901367, 0.01141282357275486, -0.13758710026741028, 2.4666574001312256)
+    jobVehicle = new alt.Vehicle('pizzaboy', -1525.0675048828125, -914.4347534179688, 9.643064498901367, 0.01141282357275486, -0.13758710026741028, 2.4666574001312256)
     jobVehicle.numberPlateText = 'PIZZA'
 
     player.setStreamSyncedMeta('activeJob', {
         jobType: 'pizza',
-        vehicle: jobVehicle
+        vehicle: jobVehicle,
+        payOut: null
     })
 
     const jobPosition = deliveryPoints[Math.floor(Math.random() * deliveryPoints.length)]
@@ -58,9 +73,32 @@ interaction.on((player) => {
         }
 
         object.destroy()
+
+        jobBlip.update({
+            pos: pizzaGuyPos,
+            text: 'Pizza Station'
+        })
+        const tip = Math.floor(Math.random() * 15) + 1 // Random tip between 1 and 15
+        rPlayer.notify.showNotification(`Super hier hast du $${tip} trinkgeld`)
+        alt.emit('someGiveMoneyEvent')
+
+        const payOut = Utility.vector.distance(jobPosition, pizzaGuyPos) * 12
+        let jobData = player.getStreamSyncedMeta('activeJob') as { jobType: string, vehicle: alt.Vehicle, payOut: null | number }
+        if(jobData.payOut) {
+            jobData.payOut += payOut
+        } else {
+            jobData.payOut = payOut
+        }
+        player.setStreamSyncedMeta('activeJob', jobData)
+
+        jobInteraction.destroy()
     })
 })
 
+alt.on('someGiveMoneyEvent', (player: alt.Player, amount: number = 0) => {
+    const rPlayer = Rebar.usePlayer(player)
+    rPlayer.notify.showNotification(`Du hast $${amount} verdient`)
+})
 
 // Debug Menu
 alt.on('playerConnect', (player: alt.Player) => {
