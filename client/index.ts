@@ -44,6 +44,32 @@ const menu = useNativeMenu({
     ]
 })
 
+const pizzaMenu = useNativeMenu({
+    header: 'Pizza Job',
+    noExit: false, // Prevent menu from exiting forcing it open if set to true
+    backCallback: () => {
+        pizzaMenu.destroy()
+    }, // Call another function when backspace is pressed. Showing another menu, or something else.
+    options: [
+        {
+            text: 'Neue Pizza ausliefern',
+            type: 'invoke',
+            value: '',
+            callback: () => {
+                alt.emitServerRaw('cube:pizza:newPizza')
+            }
+        },
+        {
+            text: 'Auszahlen',
+            type: 'invoke',
+            value: '',
+            callback: () => {
+                alt.emitServerRaw('cube:pizza:payOut')
+            }
+        }
+    ]
+})
+
 const dict = 'anim@scripted@freemode@ig9_pizza@male@'
 alt.onRpc('cube:pizza:startAnimation', async (prop: alt.Object) => {
     await alt.Utils.requestAnimDict(dict)
